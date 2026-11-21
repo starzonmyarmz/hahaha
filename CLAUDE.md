@@ -25,6 +25,13 @@ pedal" (`keepup idea show 65`).
 - Each pass's start and length are settled `fade` samples before the
   wrap, when its pre-roll (the audio just before its start) begins to
   crossfade in. A Rate change waits for that point.
+- FADE, BEND and ROLL count from the first repeat and reset with a new
+  burst. FADE glides through each pass (`Burst::progress`), so its level
+  never steps. BEND is varispeed: `pos` is fractional, read with a cubic
+  Hermite, and advances by `speed()`, which drifts up to 12 semitones a
+  beat, clamped to three octaves down and two up. At zero BEND reads
+  land on whole samples, so the step 2 goldens stay bit-identical. ROLL
+  shrinks the next pass's length when it's settled and keeps its start.
 - The envelope (`env`) is equal-power between live and repeats; the
   wrap crossfade is linear, because tail and pre-roll are often alike.
 - Keep allocations in `Engine::new`: `assert_process_allocs` aborts on

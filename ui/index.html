@@ -334,6 +334,9 @@
     const choice = (options) => ({ steps: options.length - 1, options, text: (n) => options[Math.round(n * (options.length - 1))] });
     const specs = [
       { id: "rate", name: "Rate", default: 0.5, ...choice(["1 bar", "1/2", "1/2T", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32", "1/32T"]) },
+      { id: "fade", name: "Fade", steps: 0, default: 0, text: (n) => `${Math.round(n * 100)}%` },
+      { id: "bend", name: "Bend", steps: 0, default: 0.5, text: (n) => `${Math.round(n * 200 - 100)}%` },
+      { id: "roll", name: "Roll", steps: 0, default: 0, text: (n) => `${Math.round(n * 100)}%` },
       { id: "mix", name: "Mix", steps: 0, default: 1, text: (n) => `${Math.round(n * 100)}%` },
       { id: "trigger", name: "Trigger", default: 0, ...choice(["Hold", "Latch"]) },
       { id: "repeat", name: "Repeat", default: 0, ...choice(["Off", "On"]) },

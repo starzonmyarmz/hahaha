@@ -6,6 +6,7 @@ const WRAP_FADE_MS: f64 = 5.0;
 const RELEASE_MS: f64 = 10.0;
 const MIX_SMOOTH_MS: f64 = 20.0;
 const FALLBACK_TEMPO: f64 = 120.0;
+const FADE_DB: f64 = 12.0;
 
 /// RATE: how long each repeated slice is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,11 +59,20 @@ pub struct Settings {
     /// Live signal against repeats, 0 to 100%. Both are at full level at
     /// 50%, and 100% cuts the live signal while repeating.
     pub mix: f64,
+    /// FADE: how much quieter each repeat gets, 0 to 100% (up to 12 dB
+    /// per repeat).
+    pub fade: f64,
+    /// BEND: varispeed drift, -100 to 100%. Below 0 the repeats slow and
+    /// drop like a tape stop, above 0 they speed up and rise.
+    pub bend: f64,
+    /// ROLL: how much shorter each repeat gets, 0 to 100% (down to half
+    /// the previous one).
+    pub roll: f64,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { rate: Division::Eighth, mode: Mode::Hold, mix: 100.0 }
+        Self { rate: Division::Eighth, mode: Mode::Hold, mix: 100.0, fade: 0.0, bend: 0.0, roll: 0.0 }
     }
 }
 
@@ -94,8 +104,12 @@ struct Burst {
     base: i64,
     start: i64,
     len: i64,
-    pos: i64,
+    /// Read position within the pass, in slice samples. BEND moves it at
+    /// other than one sample per sample.
+    pos: f64,
     passes: u32,
+    /// Output samples since the first repeat, for BEND.
+    elapsed: f64,
     fade: i64,
     /// The next pass's start and length, settled when its pre-roll
     /// begins `fade` samples before the wrap. The pre-roll is the audio
@@ -106,7 +120,16 @@ struct Burst {
 
 impl Burst {
     fn in_preroll(&self) -> bool {
-        self.pos >= self.len - self.fade
+        self.pos >= (self.len - self.fade) as f64
+    }
+
+    /// How far through the repeats it is, in passes, for FADE.
+    fn progress(&self) -> f64 {
+        if self.passes == 0 {
+            0.0
+        } else {
+            (self.passes - 1) as f64 + self.pos / self.len as f64
+        }
     }
 }
 
@@ -272,8 +295,9 @@ impl Engine {
             base,
             start: origin.at,
             len,
-            pos: (self.now - origin.at) % len,
+            pos: ((self.now - origin.at) % len) as f64,
             passes: 0,
+            elapsed: 0.0,
             fade: self.wrap_fade.min(len / 4),
             next: None,
         });
@@ -285,11 +309,38 @@ impl Engine {
         if b.next.is_some() || !b.in_preroll() {
             return;
         }
-        let len = self.len;
-        let start = if len == b.len { b.start } else { self.restart(&b.origin, len) };
-        let last = b.base + self.slice.len() as i64 - len - self.wrap_fade - 1;
+        let start = self.restart(&b.origin, self.len);
+        let last = b.base + self.slice.len() as i64 - self.len - self.wrap_fade - 1;
         let start = start.clamp(b.base + self.wrap_fade, last.min(self.now));
+        let shrink = (1.0 - 0.5 * percent(self.settings.roll)).powi(b.passes as i32);
+        let len = ((self.len as f64 * shrink).round() as i64).clamp(4 * self.wrap_fade, self.len);
         self.burst.as_mut().unwrap().next = Some((start, len));
+    }
+
+    /// Reads `slice` at absolute time `at`, between samples with a cubic
+    /// Hermite. Never later than `now`, which is the newest audio.
+    fn read(&self, base: i64, at: f64) -> [f64; 2] {
+        let at = at.min(self.now as f64) - base as f64;
+        let i = at.floor();
+        let t = at - i;
+        let last = self.slice.len() as i64 - 1;
+        let get = |k: i64| self.slice[(i as i64 + k).clamp(0, last) as usize];
+        let (xm, x0, x1, x2) = (get(-1), get(0), get(1), get(2));
+        [0, 1].map(|ch| {
+            let (xm, x0, x1, x2) = (xm[ch] as f64, x0[ch] as f64, x1[ch] as f64, x2[ch] as f64);
+            let c1 = 0.5 * (x1 - xm);
+            let c2 = xm - 2.5 * x0 + 2.0 * x1 - 0.5 * x2;
+            let c3 = 0.5 * (x2 - xm) + 1.5 * (x0 - x1);
+            x0 + t * (c1 + t * (c2 + t * c3))
+        })
+    }
+
+    /// Read speed for BEND: up to 12 semitones a beat at the extremes,
+    /// from a tape stop at three octaves down to two octaves up.
+    fn speed(&self, elapsed: f64) -> f64 {
+        let bend = percent(self.settings.bend.abs()).powi(2).copysign(self.settings.bend);
+        let semitones = (12.0 * bend * elapsed / self.samples_per_beat).clamp(-36.0, 24.0);
+        (semitones / 12.0).exp2()
     }
 
     fn history_index(&self, at: i64) -> usize {
@@ -323,17 +374,20 @@ impl Engine {
             if at < self.slice.len() {
                 self.slice[at] = input;
             }
-            let current = (b.passes > 0).then(|| self.slice[(b.start + b.pos - b.base) as usize]);
-            let preroll = b.next.filter(|_| b.in_preroll()).map(|(start, _)| self.slice[(start + b.pos - b.len - b.base) as usize]);
+            let current = (b.passes > 0).then(|| self.read(b.base, b.start as f64 + b.pos));
+            let preroll = b.next.filter(|_| b.in_preroll()).map(|(start, _)| self.read(b.base, (start - b.len) as f64 + b.pos));
             heard = current.is_some() || preroll.is_some();
             repeat = match (current, preroll) {
                 (Some(c), Some(p)) => {
-                    let w = (b.pos - (b.len - b.fade)) as f64 / b.fade as f64;
-                    [0, 1].map(|ch| c[ch] as f64 * (1.0 - w) + p[ch] as f64 * w)
+                    let w = ((b.pos - (b.len - b.fade) as f64) / b.fade as f64).clamp(0.0, 1.0);
+                    [0, 1].map(|ch| c[ch] * (1.0 - w) + p[ch] * w)
                 }
-                (Some(x), None) | (None, Some(x)) => [x[0] as f64, x[1] as f64],
+                (Some(x), None) | (None, Some(x)) => x,
                 (None, None) => [0.0; 2],
             };
+            let level = (-FADE_DB * percent(self.settings.fade) * b.progress() / 20.0 * std::f64::consts::LN_10).exp();
+            let level = if level < 1e-5 { 0.0 } else { level };
+            repeat = repeat.map(|x| x * level);
         }
 
         let target = if heard && want && self.pending.is_none() { 1.0 } else { 0.0 };
@@ -364,12 +418,19 @@ impl Engine {
 
     fn advance(&mut self) {
         let wrap_fade = self.wrap_fade;
+        let speed = match &self.burst {
+            Some(b) if b.passes > 0 => self.speed(b.elapsed),
+            _ => 1.0,
+        };
         if let Some(b) = &mut self.burst {
-            b.pos += 1;
-            if b.pos >= b.len {
+            b.pos += speed;
+            if b.passes > 0 {
+                b.elapsed += 1.0;
+            }
+            if b.pos >= b.len as f64 {
+                b.pos -= b.len as f64;
                 (b.start, b.len) = b.next.take().unwrap_or((b.start, b.len));
                 b.passes += 1;
-                b.pos = 0;
                 b.fade = wrap_fade.min(b.len / 4);
             }
         }
@@ -395,6 +456,10 @@ impl Engine {
 fn mix_gains(mix: f64) -> (f64, f64) {
     let m = (mix / 100.0).clamp(0.0, 1.0);
     ((2.0 * (1.0 - m)).min(1.0), (2.0 * m).min(1.0))
+}
+
+fn percent(x: f64) -> f64 {
+    (x / 100.0).clamp(0.0, 1.0)
 }
 
 fn flush(x: f64) -> f64 {

@@ -19,7 +19,7 @@ fn playing(start: usize, tempo: f64) -> Transport {
 }
 
 fn settings(rate: Division, mode: Mode, mix: f64) -> Settings {
-    Settings { rate, mode, mix }
+    Settings { rate, mode, mix, ..Settings::default() }
 }
 
 /// Runs mono input through the engine in host-sized blocks. `control` gets
@@ -203,6 +203,78 @@ fn retrigger_grabs_a_fresh_slice() {
     assert_repeats(&out, &input, wrap..wrap + eighth - FADE, eighth);
 }
 
+fn effects(rate: Division, fade: f64, bend: f64, roll: f64) -> Settings {
+    Settings { rate, fade, bend, roll, ..Settings::default() }
+}
+
+#[test]
+fn fade_drops_each_repeat_by_its_share_of_12_db() {
+    let input = noise(BEAT * 3);
+    let press = block_at(BEAT / 10);
+    let eighth = BEAT / 2;
+    let s = effects(Division::Eighth, 50.0, 0.0, 0.0);
+    let out = render(&input, |at| (s, at >= press, playing(at, 120.0)));
+
+    for t in [eighth, eighth + eighth / 2, 2 * eighth, 3 * eighth + 100] {
+        let progress = (t - eighth) as f64 / eighth as f64;
+        let level = 10f64.powf(-6.0 * progress / 20.0) as f32;
+        let source = input[t % eighth];
+        assert!((out[t] - source * level).abs() < 1e-4, "sample {t}: {} against {}", out[t], source * level);
+    }
+}
+
+#[test]
+fn roll_halves_each_repeat_at_full() {
+    let input = noise(BEAT * 3);
+    let press = block_at(BEAT / 10);
+    let eighth = BEAT / 2;
+    let s = effects(Division::Eighth, 0.0, 0.0, 100.0);
+    let out = render(&input, |at| (s, at >= press, playing(at, 120.0)));
+
+    let mut wrap = eighth;
+    for len in [eighth, eighth / 2, eighth / 4, eighth / 8] {
+        assert_repeats(&out, &input, wrap..wrap + len - FADE.min(len / 4), wrap);
+        wrap += len;
+    }
+}
+
+/// Zero crossings per second over `range`.
+fn crossings(xs: &[f32], range: std::ops::Range<usize>) -> f64 {
+    let n = xs[range.clone()].windows(2).filter(|w| (w[0] < 0.0) != (w[1] < 0.0)).count();
+    n as f64 * SR as f64 / range.len() as f64
+}
+
+#[test]
+fn bend_drops_or_raises_the_repeats() {
+    let input = support::tone(220.0, 3.0, SR);
+    let press = block_at(BEAT / 10);
+    let check = BEAT + BEAT / 2..2 * BEAT;
+    let dry = crossings(&input, check.clone());
+    for (bend, lower) in [(-100.0, true), (100.0, false)] {
+        let s = effects(Division::Quarter, 0.0, bend, 0.0);
+        let out = render(&input, |at| (s, at >= press, playing(at, 120.0)));
+        let bent = crossings(&out, check.clone());
+        assert!(if lower { bent < dry * 0.7 } else { bent > dry * 1.4 }, "bend {bend}: {bent} against {dry}");
+    }
+}
+
+#[test]
+fn retrigger_resets_the_effects() {
+    let input = noise(BEAT * 5);
+    let press = block_at(BEAT / 10);
+    let lift = block_at(2 * BEAT + BEAT / 3);
+    let again = lift + BLOCK;
+    let eighth = BEAT / 2;
+    let s = effects(Division::Eighth, 100.0, 0.0, 50.0);
+    let out = render(&input, |at| (s, at >= press && !(lift..again).contains(&at), playing(at, 120.0)));
+
+    let wrap = 2 * BEAT + eighth;
+    for t in wrap..wrap + eighth - FADE {
+        let level = 10f64.powf(-12.0 * (t - wrap) as f64 / eighth as f64 / 20.0) as f32;
+        assert!((out[t] - input[t - eighth] * level).abs() < 1e-4, "sample {t}");
+    }
+}
+
 #[test]
 fn silence_stays_silent_and_extremes_stay_finite() {
     let silence = vec![0.0; BEAT * 2];
@@ -211,9 +283,11 @@ fn silence_stays_silent_and_extremes_stay_finite() {
 
     let input = noise(BEAT * 4);
     for (rate, tempo) in [(Division::ThirtySecondTriplet, 999.0), (Division::Bar, 20.0), (Division::Bar, 1.0e9)] {
-        let s = settings(rate, Mode::Hold, 100.0);
-        let out = render(&input, |at| (s, at >= BLOCK, playing(at, tempo)));
-        assert!(out.iter().all(|x| x.is_finite() && x.abs() <= 2.0), "{rate:?} at {tempo} BPM");
+        for (fade, bend, roll) in [(0.0, 0.0, 0.0), (100.0, -100.0, 100.0), (0.0, 100.0, 100.0)] {
+            let s = effects(rate, fade, bend, roll);
+            let out = render(&input, |at| (s, at >= BLOCK, playing(at, tempo)));
+            assert!(out.iter().all(|x| x.is_finite() && x.abs() <= 2.0), "{rate:?} at {tempo} BPM, {fade}/{bend}/{roll}");
+        }
     }
 }
 
@@ -248,6 +322,44 @@ fn wraps_and_rate_changes_dont_click() {
         (settings(rate, Mode::Hold, 100.0), at >= press, playing(at, 120.0))
     });
     assert!(biggest_jump(&out) <= biggest_jump(&input) * 1.1, "{} against {}", biggest_jump(&out), biggest_jump(&input));
+}
+
+#[test]
+fn rolls_and_tape_stops_dont_click() {
+    let input = riff();
+    let press = block_at(BEAT / 8);
+    for (fade, bend, roll) in [(0.0, 0.0, 100.0), (30.0, 0.0, 60.0), (0.0, -60.0, 0.0), (20.0, -100.0, 50.0)] {
+        let s = effects(Division::Quarter, fade, bend, roll);
+        let out = render(&input, |at| (s, at >= press, playing(at, 120.0)));
+        assert!(biggest_jump(&out) <= biggest_jump(&input) * 1.1, "{fade}/{bend}/{roll}: {} against {}", biggest_jump(&out), biggest_jump(&input));
+    }
+}
+
+#[test]
+fn tape_stop_matches_golden() {
+    let input = riff();
+    let press = block_at(2 * BEAT + BEAT / 8);
+    let s = effects(Division::Half, 0.0, -50.0, 0.0);
+    let out = render(&input, |at| (s, (press..7 * BEAT).contains(&at), playing(at, 120.0)));
+    support::check_golden("tape-stop", &out, SR as u32);
+}
+
+#[test]
+fn riser_roll_matches_golden() {
+    let input = riff();
+    let press = block_at(2 * BEAT + BEAT / 8);
+    let s = effects(Division::Quarter, 0.0, 30.0, 60.0);
+    let out = render(&input, |at| (s, (press..7 * BEAT).contains(&at), playing(at, 120.0)));
+    support::check_golden("riser-roll", &out, SR as u32);
+}
+
+#[test]
+fn fading_echo_matches_golden() {
+    let input = riff();
+    let press = block_at(BEAT + BEAT / 8);
+    let s = effects(Division::EighthTriplet, 25.0, 0.0, 0.0);
+    let out = render(&input, |at| (s, (press..7 * BEAT).contains(&at), playing(at, 120.0)));
+    support::check_golden("fading-echo", &out, SR as u32);
 }
 
 #[test]
