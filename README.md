@@ -30,11 +30,17 @@ automated in the studio.
 | Control | Range | What it does |
 |---|---|---|
 | Rate | 1 bar to 1/32, with triplets | How long each repeated slice is |
+| Fade | 0–100% | Each repeat gets quieter, by up to 12 dB a repeat |
+| Bend | −100–100% | Left slows the repeats into a tape stop, right speeds them up into a riser. Pitch and speed move together, like tape |
+| Roll | 0–100% | Each repeat gets shorter, down to half the last one at 100% (1/8, 1/16, 1/32…) |
 | Mix | 0–100% | Live signal against repeats. At 50% both are at full level; at 100% the live signal is cut while repeating |
 | Trigger | Hold / Latch | Hold repeats while the treadle is down. Latch starts on one tap and stops on the next |
 | Repeat | On / Off | The treadle. Map it to a footswitch or automate it |
 
-Pressing the treadle again while it's repeating grabs a fresh slice.
+Fade, Bend and Roll build up from the first repeat. Pressing the
+treadle again while it's repeating grabs a fresh slice and starts them
+over. Bend gives up the grid: a tape stop drags behind the beat and a
+riser runs ahead of it.
 For automation, use Hold: in Latch, each press toggles.
 
 ## Installing
