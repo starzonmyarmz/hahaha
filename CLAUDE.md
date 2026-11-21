@@ -144,7 +144,7 @@ Settled with the user; keep to it.
   parameters.
 - Fonts can't load from the network: embed them as base64 `@font-face`
   data URLs, and keep the file and its license in `ui/fonts`.
-- After a visible UI change, retake `docs/hahaha.jpg` with the
+- After a visible UI change, retake `docs/hahaha.png` with the
   `screenshot` skill.
 
 ## Testing in REAPER
