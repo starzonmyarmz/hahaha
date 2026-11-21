@@ -1,6 +1,6 @@
 mod support;
 
-use example::engine::Engine;
+use hahaha::engine::Engine;
 
 const SR: f32 = 48_000.0;
 

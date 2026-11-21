@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CRATE: example
-  PLUGIN: Example
+  CRATE: hahaha
+  PLUGIN: Ha Ha Ha
 
 jobs:
   macos:

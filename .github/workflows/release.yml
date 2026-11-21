@@ -11,8 +11,8 @@ concurrency:
   group: release-${{ github.ref_name }}
 
 env:
-  CRATE: example
-  PLUGIN: Example
+  CRATE: hahaha
+  PLUGIN: Ha Ha Ha
 
 jobs:
   version:
@@ -96,7 +96,7 @@ jobs:
           unzip -q dist/windows.zip -d stage
           cp INSTALL.txt stage/
           cd stage
-          zip -qry "../$PLUGIN-$VERSION.zip" INSTALL.txt macOS Windows
+          zip -qry "../$CRATE-$VERSION.zip" INSTALL.txt macOS Windows
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
@@ -104,7 +104,7 @@ jobs:
         run: |
           prerelease=
           case "$VERSION" in *-*) prerelease=--prerelease ;; esac
-          gh release create "$GITHUB_REF_NAME" "$PLUGIN-$VERSION.zip" \
+          gh release create "$GITHUB_REF_NAME" "$CRATE-$VERSION.zip" \
             --title "$PLUGIN $VERSION" \
             --generate-notes \
             --verify-tag $prerelease

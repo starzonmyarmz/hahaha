@@ -589,18 +589,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "example"
-version = "0.1.0"
-dependencies = [
- "baseview",
- "hound",
- "keyboard-types",
- "nice-plug",
- "serde_json",
- "wry",
-]
-
-[[package]]
 name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -967,6 +955,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "hahaha"
+version = "0.1.0"
+dependencies = [
+ "baseview",
+ "hound",
+ "keyboard-types",
+ "nice-plug",
+ "serde_json",
+ "wry",
 ]
 
 [[package]]
