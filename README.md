@@ -1,6 +1,6 @@
 # Ha Ha Ha
 
-<img src="docs/hahaha.png" width="332" alt="Ha Ha Ha, a bubblegum-pink pedal printed in maroon, with a Hold/Latch toggle and a red LED over five cream knobs with chrome skirts (Rate, Fade, Bend, Roll, Mix), a cream preset window between chrome arrow buttons, and a wide hinged treadle printed with a laughing skull spilling HA HA HA above a ribbed rubber pad">
+<img src="docs/hahaha.png" width="337" alt="Ha Ha Ha, a bubblegum-pink pedal printed in maroon, with a Hold/Latch toggle and a red LED over five cream knobs with chrome skirts (Rate, Fade, Bend, Roll, Mix), a cream preset window between chrome arrow buttons, and a wide hinged treadle printed with a laughing skull spilling HA HA HA above a ribbed rubber pad">
 
 A tempo-synced repeater pedal, as a VST3 and CLAP plugin for macOS and
 Windows. Hold the treadle and it grabs the last beat division you played
