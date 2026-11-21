@@ -8,8 +8,39 @@ pedal" (`keepup idea show 65`).
 ## Layout
 
 - `plugin/src/engine.rs`: all DSP, with no plugin framework types, so tests
-  drive it directly.
-- `plugin/src/lib.rs`: host parameters and plumbing.
+  drive it directly. `Settings` holds the controls in their own units,
+  `Transport` the host's tempo and position at the start of a block.
+- `plugin/src/params.rs`: host parameters, mapped to `Settings`.
+- `plugin/src/lib.rs`: plumbing, including the host's transport.
+
+## Engine
+
+- Times are absolute sample counts (`now`). `history` is a ring that's
+  always written. A burst copies `history` from one max slice length
+  before its start into `slice` and keeps writing `slice` as it plays,
+  so a long hold never loses its audio and a longer Rate mid-burst can
+  reach back before the original start.
+- A slice is played in phase with the grid: on the first pass the read
+  position is the live input, so nothing is heard until the first wrap.
+- Each pass's start and length are settled `fade` samples before the
+  wrap, when its pre-roll (the audio just before its start) begins to
+  crossfade in. A Rate change waits for that point.
+- The envelope (`env`) is equal-power between live and repeats; the
+  wrap crossfade is linear, because tail and pre-roll are often alike.
+- Keep allocations in `Engine::new`: `assert_process_allocs` aborts on
+  any in `process`. Retriggering copies up to two max slice lengths
+  once, which is the costliest thing it does.
+- `wraps_and_rate_changes_dont_click` compares the biggest
+  sample-to-sample jump in the output with the input's. Keep it passing
+  after any change to the crossfades.
+
+## Adding a parameter
+
+1. `Settings` in `engine.rs` and its `Default`.
+2. `HaHaHaParams` in `params.rs`, and `settings()`. Parameter IDs must
+   never change after a release.
+3. The mock's `specs` in `ui/index.html`.
+4. The controls table in `README.md`.
 - `plugin/src/editor.rs` and `plugin/src/bridge.rs`: nothing specific to
   Ha Ha Ha. The page's size and HTML come from `PAGE` in `lib.rs`, and the
   bridge works with any `#[derive(Params)]` struct.

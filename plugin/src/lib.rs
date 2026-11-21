@@ -1,9 +1,11 @@
 mod bridge;
 mod editor;
 pub mod engine;
+mod params;
 
 use engine::Engine;
 use nice_plug::prelude::*;
+use params::HaHaHaParams;
 use std::sync::Arc;
 
 static PAGE: editor::Page = editor::Page {
@@ -20,19 +22,23 @@ pub struct HaHaHa {
     engine: Engine,
 }
 
-#[derive(Params)]
-struct HaHaHaParams {
-    #[id = "gain"]
-    gain: FloatParam,
-}
-
 impl Default for HaHaHa {
     fn default() -> Self {
-        let gain = FloatParam::new("Gain", util::db_to_gain(0.0), FloatRange::gain_range(-30.0, 30.0))
-            .with_unit(" dB")
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(2))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db());
-        Self { params: Arc::new(HaHaHaParams { gain }), engine: Engine::new(48_000.0) }
+        Self { params: Arc::new(HaHaHaParams::default()), engine: Engine::new(48_000.0) }
+    }
+}
+
+fn transport(t: &nice_plug::context::process::Transport) -> engine::Transport {
+    let bar_beats = match (t.time_sig_numerator, t.time_sig_denominator) {
+        (Some(n), Some(d)) if n > 0 && d > 0 => Some(n as f64 * 4.0 / d as f64),
+        _ => None,
+    };
+    engine::Transport {
+        tempo: t.tempo,
+        playing: t.playing,
+        pos_beats: t.pos_beats(),
+        bar_start_beats: t.bar_start_pos_beats(),
+        bar_beats,
     }
 }
 
@@ -70,23 +76,26 @@ impl Plugin for HaHaHa {
         if self.engine.sample_rate() != buffer_config.sample_rate {
             self.engine = Engine::new(buffer_config.sample_rate);
         }
-        self.engine.reset(self.params.gain.value());
+        self.engine.set(self.params.settings());
+        self.engine.reset();
         true
     }
 
     fn reset(&mut self) {
-        self.engine.reset(self.params.gain.value());
+        self.engine.reset();
     }
 
     fn process(
         &mut self,
         buffer: &mut Buffer,
         _aux: &mut AuxiliaryBuffers,
-        _context: &mut impl ProcessContext<Self>,
+        context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        self.engine.set_gain(self.params.gain.value());
+        self.engine.set(self.params.settings());
+        self.engine.set_treadle(self.params.repeat.value());
+        let transport = transport(context.transport());
         if let [left, right] = buffer.as_slice() {
-            self.engine.process(left, right);
+            self.engine.process(left, right, &transport);
         }
         ProcessStatus::Normal
     }

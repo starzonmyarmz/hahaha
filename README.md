@@ -8,6 +8,35 @@ you're back to dry.
 It's built footswitch-first for playing live, and every control can be
 automated in the studio.
 
+## How it works
+
+1. It's always listening, keeping the last few seconds of what you play.
+2. When the host is playing, stomping grabs a slice starting at the last
+   grid line for the current Rate, so a late stomp still lands on the
+   grid. The slice repeats in time with the grid: you hear yourself live
+   until the slice is captured, then it repeats from the next grid line.
+3. With the transport stopped, the slice starts when you stomp and Rate
+   uses the host's tempo, or 120 BPM if there isn't one (a quarter note
+   is 500 ms).
+4. Changing Rate mid-burst takes effect at the next repeat. A longer
+   Rate reaches back into audio that's already captured, so it stays on
+   the grid.
+5. Each repeat's attack lands on the grid whole: the 5 ms before it
+   crossfades out of the previous pass. Releasing crossfades back to dry
+   in 10 ms.
+
+## Controls
+
+| Control | Range | What it does |
+|---|---|---|
+| Rate | 1 bar to 1/32, with triplets | How long each repeated slice is |
+| Mix | 0–100% | Live signal against repeats. At 50% both are at full level; at 100% the live signal is cut while repeating |
+| Trigger | Hold / Latch | Hold repeats while the treadle is down. Latch starts on one tap and stops on the next |
+| Repeat | On / Off | The treadle. Map it to a footswitch or automate it |
+
+Pressing the treadle again while it's repeating grabs a fresh slice.
+For automation, use Hold: in Latch, each press toggles.
+
 ## Installing
 
 Download the zip from
