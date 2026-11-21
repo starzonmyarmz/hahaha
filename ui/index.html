@@ -5,12 +5,24 @@
 <title>Ha Ha Ha</title>
 <style>
   :root {
-    --bg: #1b1a19;
-    --panel: #262523;
-    --ink: #f2efe8;
-    --muted: #8f8b83;
-    --accent: #ff7a3d;
-    --track: #3a3835;
+    --board: #1a1617;
+    --coat: #f4a6c0;
+    --coat-hi: #fbc9d9;
+    --coat-lo: #d97c9c;
+    --ink: #6b1f3a;
+    --ink-soft: rgb(107 31 58 / 0.62);
+    --cream: #f6eedd;
+    --cream-hi: #fffaf0;
+    --cream-lo: #cdbf9f;
+    --chrome-hi: #fbfbf9;
+    --chrome: #c4c6c8;
+    --chrome-lo: #6d7074;
+    --red: #ff3b3b;
+    --red-off: #5a1a1f;
+    --rubber: #262224;
+    --pill: #1a1012;
+    --display: "Display", sans-serif;
+    --label: "Label", "Arial Rounded MT Bold", sans-serif;
   }
 
   * { box-sizing: border-box; }
@@ -27,9 +39,11 @@
   body {
     display: grid;
     place-items: center;
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse at 50% 40%, rgb(255 255 255 / 0.05), transparent 65%),
+      var(--board);
+    font-family: var(--label);
     color: var(--ink);
-    font-family: -apple-system, "Segoe UI", sans-serif;
   }
 
   button {
@@ -41,124 +55,587 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--ink);
     outline-offset: 4px;
   }
 
-  main {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 28px;
-    padding: 28px;
-    border-radius: 16px;
-    background: var(--panel);
-  }
-
-  .version {
-    position: absolute;
-    inset-block-end: 10px;
-    inset-inline-end: 12px;
-    margin: 0;
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    color: var(--muted);
-  }
-
-  .control {
+  .pedal {
+    position: relative;
+    inline-size: 540px;
+    block-size: 700px;
+    border-radius: 22px 22px 30px 30px;
+    padding: 30px 26px 22px;
     display: grid;
-    justify-items: center;
-    gap: 8px;
-    inline-size: 72px;
+    grid-template-rows: auto auto auto 1fr;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+      linear-gradient(160deg, var(--coat-hi), var(--coat) 40%, var(--coat-lo));
+    background-blend-mode: soft-light, normal;
+    box-shadow:
+      inset 2px 3px 0 rgb(255 255 255 / 0.45),
+      inset -3px -5px 0 rgb(0 0 0 / 0.16),
+      inset 0 0 0 1px rgb(0 0 0 / 0.22),
+      0 2px 0 #a8566f,
+      0 26px 40px rgb(0 0 0 / 0.65),
+      0 6px 10px rgb(0 0 0 / 0.5);
   }
 
-  .name {
+  .print {
+    color: var(--ink);
+    mix-blend-mode: multiply;
+  }
+
+  .jacks {
+    position: absolute;
+    inset-block-start: 10px;
+    inset-inline: 30px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    letter-spacing: 0.22em;
+    color: var(--ink-soft);
+  }
+
+  .label {
     font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--muted);
+    line-height: 1;
   }
 
-  .text {
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
+  .value {
+    position: absolute;
+    padding: 3px 7px;
+    border-radius: 4px;
+    background: var(--pill);
+    color: var(--cream);
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    translate: 0 -3px;
+    transition: opacity 120ms, translate 120ms;
+    pointer-events: none;
+    z-index: 3;
   }
 
-  .knob {
-    --arc: calc(var(--turn) * 270deg);
-    position: relative;
-    inline-size: 56px;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    touch-action: none;
-    cursor: ns-resize;
-    background: conic-gradient(from -135deg, var(--accent) 0 var(--arc), var(--track) var(--arc) 270deg, transparent 270deg);
-    mask: radial-gradient(circle, transparent 55%, #000 56%);
+  .control:is(:hover, :focus-within, .active) .value {
+    opacity: 1;
+    translate: 0 0;
   }
 
-  .dial {
-    position: relative;
-    inline-size: 56px;
-    aspect-ratio: 1;
+  /* ---------- toggle and LED ---------- */
 
-    & .pointer {
-      position: absolute;
-      inset: 0;
-      rotate: calc(var(--turn) * 270deg - 135deg);
-      pointer-events: none;
-
-      &::before {
-        content: "";
-        position: absolute;
-        inset-inline-start: calc(50% - 1px);
-        inset-block-start: 16%;
-        inline-size: 2px;
-        block-size: 26%;
-        border-radius: 1px;
-        background: var(--ink);
-      }
-    }
+  .status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-inline: 14px;
   }
 
-  .switch {
-    inline-size: 44px;
-    block-size: 24px;
-    border-radius: 12px;
-    background: var(--track);
-    position: relative;
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
     cursor: pointer;
-    transition: background 120ms;
+
+    & .label { font-size: 9px; opacity: 0.5; transition: opacity 120ms; }
+    &[aria-checked="false"] .hold, &[aria-checked="true"] .latch { opacity: 1; }
+  }
+
+  .bat {
+    position: relative;
+    inline-size: 34px;
+    block-size: 16px;
+    border-radius: 8px;
+    background: linear-gradient(#3a2a30, #140c0f);
+    box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.6), 0 1px 0 rgb(255 255 255 / 0.4);
 
     &::after {
       content: "";
       position: absolute;
-      inset-block: 3px;
-      inset-inline-start: 3px;
-      inline-size: 18px;
+      inset-block: 2px;
+      inset-inline-start: 2px;
+      inline-size: 12px;
       border-radius: 50%;
+      background: radial-gradient(circle at 38% 30%, var(--chrome-hi), var(--chrome) 45%, var(--chrome-lo));
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+      transition: translate 100ms;
+    }
+  }
+
+  .toggle[aria-checked="true"] .bat::after { translate: 18px 0; }
+
+  .led {
+    inline-size: 13px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #8a3038, var(--red-off) 70%);
+    box-shadow: 0 0 0 2px #2b1b1f, 0 0 0 3px rgb(255 255 255 / 0.35), inset 0 -1px 2px rgb(0 0 0 / 0.5);
+    transition: background 60ms, box-shadow 60ms;
+
+    &.on {
+      background: radial-gradient(circle at 40% 35%, #ffd0d0, var(--red) 55%, #b81f24);
+      box-shadow: 0 0 0 2px #2b1b1f, 0 0 0 3px rgb(255 255 255 / 0.35), 0 0 14px 3px rgb(255 59 59 / 0.65);
+    }
+  }
+
+  /* ---------- knobs ---------- */
+
+  .knobs {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-block-start: 26px;
+  }
+
+  .control {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    inline-size: 84px;
+
+    & .value { inset-block-start: calc(100% + 6px); }
+  }
+
+  .knob {
+    --sweep: 270deg;
+    --size: 60px;
+    position: relative;
+    inline-size: var(--size);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    touch-action: none;
+    cursor: ns-resize;
+    filter: drop-shadow(0 5px 4px rgb(0 0 0 / 0.4)) drop-shadow(0 1px 0 rgb(0 0 0 / 0.45));
+
+    &:focus-visible { outline-offset: 12px; }
+  }
+
+  .knob .skirt, .knob .cap, .knob .pointer {
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  .knob .skirt {
+    inset: 0;
+    rotate: calc(var(--turn) * var(--sweep) - var(--sweep) / 2);
+    background:
+      radial-gradient(circle, transparent 58%, rgb(0 0 0 / 0.28) 100%),
+      repeating-conic-gradient(var(--chrome-hi) 0 4deg, var(--chrome) 4deg 8deg);
+  }
+
+  .knob .cap {
+    inset: 17%;
+    background:
+      radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.75), transparent 55%),
+      radial-gradient(circle at 50% 50%, var(--cream-hi), var(--cream) 70%, var(--cream-lo));
+    box-shadow: inset 0 -2px 3px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.3);
+  }
+
+  .knob .pointer {
+    inset: 0;
+    rotate: calc(var(--turn) * var(--sweep) - var(--sweep) / 2);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset-inline-start: calc(50% - 1.5px);
+      inset-block-start: 20%;
+      inline-size: 3px;
+      block-size: 28%;
+      border-radius: 2px;
       background: var(--ink);
-      transition: translate 120ms;
+    }
+  }
+
+  .ticks {
+    position: absolute;
+    inset: -10px;
+    pointer-events: none;
+
+    & i {
+      position: absolute;
+      inset-inline-start: calc(50% - 1.5px);
+      inset-block-start: 0;
+      inline-size: 3px;
+      block-size: 50%;
+      transform-origin: 50% 100%;
+
+      &::before {
+        content: "";
+        display: block;
+        inline-size: 3px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--ink);
+      }
+      &.major::before { scale: 1.6; }
+    }
+  }
+
+  /* ---------- presets and version ---------- */
+
+  .presets {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-block-start: 30px;
+  }
+
+  .window {
+    display: grid;
+    place-items: center;
+    inline-size: 170px;
+    block-size: 30px;
+    border-radius: 6px;
+    background:
+      linear-gradient(rgb(255 255 255 / 0.35), transparent 45%),
+      radial-gradient(ellipse at 50% 50%, var(--cream-hi), var(--cream) 60%, var(--cream-lo));
+    box-shadow:
+      0 0 0 3px #2b1b1f,
+      0 0 0 4px rgb(255 255 255 / 0.35),
+      inset 0 2px 5px rgb(0 0 0 / 0.35);
+    color: var(--ink);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+
+    &[data-custom="true"] { color: var(--ink-soft); }
+  }
+
+  .step {
+    inline-size: 26px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 10px;
+    font-weight: 900;
+    background: radial-gradient(circle at 38% 30%, var(--chrome-hi), var(--chrome) 45%, var(--chrome-lo) 95%);
+    box-shadow: 0 3px 3px rgb(0 0 0 / 0.45), inset 0 0 0 1px rgb(0 0 0 / 0.3), inset 0 -2px 3px rgb(0 0 0 / 0.2);
+    transition: translate 60ms, box-shadow 60ms;
+
+    &:active {
+      translate: 0 2px;
+      box-shadow: 0 1px 1px rgb(0 0 0 / 0.45), inset 0 0 0 1px rgb(0 0 0 / 0.3), inset 0 -1px 2px rgb(0 0 0 / 0.25);
+    }
+  }
+
+  .version {
+    position: absolute;
+    inset-block-end: 7px;
+    inset-inline-end: 26px;
+    font-size: 8px;
+    letter-spacing: 0.16em;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- treadle ---------- */
+
+  .bay {
+    position: relative;
+    margin-block-start: 22px;
+    border-radius: 14px 14px 20px 20px;
+    background: #2b1b1f;
+    box-shadow: inset 0 3px 8px rgb(0 0 0 / 0.7), 0 1px 0 rgb(255 255 255 / 0.4);
+    perspective: 900px;
+  }
+
+  .treadle {
+    --pad: 74px;
+    --pad-gap: 16px;
+    position: absolute;
+    inset: 3px 3px 5px;
+    border-radius: 12px 12px 18px 18px;
+    overflow: hidden;
+    cursor: pointer;
+    touch-action: none;
+    transform-origin: 50% 0;
+    transition: transform 70ms ease-out, filter 70ms;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+      linear-gradient(175deg, var(--coat-hi), var(--coat) 30%, var(--coat-lo));
+    background-blend-mode: soft-light, normal;
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.5),
+      inset 0 -3px 0 rgb(0 0 0 / 0.15),
+      0 6px 8px rgb(0 0 0 / 0.45);
+
+    &[aria-pressed="true"] {
+      transform: rotateX(-3deg) translateY(2px);
+      filter: brightness(0.94);
+      box-shadow:
+        inset 0 2px 0 rgb(255 255 255 / 0.35),
+        inset 0 -3px 0 rgb(0 0 0 / 0.15),
+        0 1px 2px rgb(0 0 0 / 0.5);
     }
 
-    &[aria-checked="true"] {
-      background: var(--accent);
+    &:focus-visible { outline-offset: -6px; }
+  }
 
-      &::after { translate: 20px 0; }
-    }
+  .hinge {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 12px;
+    background:
+      linear-gradient(transparent 7px, rgb(0 0 0 / 0.35) 7px 8px, rgb(255 255 255 / 0.35) 8px 9px, transparent 9px),
+      linear-gradient(rgb(0 0 0 / 0.25), transparent 7px);
+    pointer-events: none;
+  }
+
+  .art {
+    position: absolute;
+    inset-block-start: 14px;
+    inset-inline-start: 8px;
+    inline-size: calc(100% - 16px);
+    block-size: calc(100% - var(--pad) - 2 * var(--pad-gap) - 14px);
+
+    & .ink { fill: var(--ink); }
+    & .fill { fill: var(--cream); }
+    & .laugh { font-family: var(--display); }
+  }
+
+  .pad {
+    position: absolute;
+    inset-inline: 18px;
+    inset-block-end: var(--pad-gap);
+    block-size: var(--pad);
+    border-radius: 10px 10px 14px 14px;
+    background:
+      repeating-linear-gradient(transparent 0 7px, rgb(0 0 0 / 0.55) 7px 9px, rgb(255 255 255 / 0.06) 9px 10px),
+      linear-gradient(#3a3437, var(--rubber));
+    box-shadow: inset 0 2px 2px rgb(255 255 255 / 0.12), inset 0 -2px 4px rgb(0 0 0 / 0.6), 0 2px 3px rgb(0 0 0 / 0.35);
+  }
+</style>
+<style>
+  @font-face {
+    font-family: "Display";
+    src: url(data:font/woff2;base64,d09GMgABAAAAAAPYAA0AAAAAB3wAAAOIAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG4EcHDQGYABEERAKhDSDRwsKAAE2AiQDEAQgBYQwByAbJAbIBB74Ou39yVRQkqYAF2BSTbLGSUizPIG48SRxfv5y2pjWWTqWcIlE/O63Nq01aAFFcYGsZUVXGGgCRewtwzusVacIIgBn9BQjV1Y3difY2DzaIHLGNY/mtg4Zq1QhA/wQRS0jRis4xrjGk5HAoceZ1vvDsEZCdRoMNuGQZgQSko8AjHi7+r0Xs2hDIeo944wBw7zkhQOnmhueSmk6iSXYNUnzpN7qOxrCJnqJgRhE7iTVlqKMA0/3aOjVkTNEUitL/zuDLIk9kbC8PiA5SutYfeQogA7r0vuuCEJMRu9yxLE+FUkZtTNRxiXqI/WsehyGLFjxNw4444ODquIxf3xPyXaZE8B1IKpFO/wBIcsFLsqE/q6DBgxy7W9ewUyr1c/KTN8VG5yd520SswJstgDb9pBezvodzLT6Wa00adu57Qmbj4f0u3HDZf416k7o4F42MWub87wjqd3/bMRtW7HCd8WWwN4rMEb2Nlv3+qZ+NjGr3b+9vbC42cVlPrE53V16NfyXWU7sPLFu54ljM5dUBi+uZOi4QjeXgSaxylkKKNoW+s6vzdU+PmGL9WeWKajH2i2yn+v0Ccb6wOJ5IdYAi7vn0Ob7hef3WhJ7KI39Rpq71kcsiVuVubvAzafcJzBE02UXOZ9Xt7nYJcRvm+v1M2vk5F2Frq5tzSxwkAI6HAt949fmah+fc3vYz2yjbtNe3Sb+9uRdha4uSp/MvvZSQKHUR3CJdv1e7fom1ZGCe728Ksrj/iCPwm+OQvOyKnj5n96LvXbN4Bnz7+j/zo6P5YM0OtxDrRDwy/ab4+l/R/85OT7WvOQX1mNZGkE850A6pt7QlKvPR1kv8x5XVuNwqdBVgbzTkZFX0yo7iZ65ojoVCbxFpkjCXcSLNOTyXiQTzSWRHePpGbUnGjyHO5kMcRNjGYuFfHToGMMwRtOEhbEMpmXMa61oMTMaIzo6UU0j3TAB3m3BxBAUhpNGV0ZgZBytDGE0PRnBaEwiZhQiSUeLHj3pFNBZHFLSmljXWIbBzOPFhJZccsXSNobQwoj2SyPR0koTQzFQ5KzSbDLJIbefEXOSFTkw4mF70EAvOlKwliG5EdDSCsxYmFSjN+7nrUgSGUYSkRjGSmURSf3qHAqTWG1nRq+sWj96d1yJNLeMW+puaxnLJCyMYDgj9pJsdJVi3BF0LrBnrjaSPmDS51XqQQxY) format("woff2");
+  }
+  @font-face {
+    font-family: "Label";
+    src: url(data:font/woff;base64,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) format("woff");
   }
 </style>
 </head>
 <body>
-<main id="controls"></main>
-<p class="version" id="version"></p>
+<main class="pedal" aria-label="Ha Ha Ha">
+  <div class="jacks print" aria-hidden="true"><span>◂ OUT</span><span>IN ◂</span></div>
+
+  <div class="status">
+    <button class="toggle print" id="trigger" role="switch" aria-label="Latch" aria-checked="false">
+      <span class="label hold">Hold</span><span class="bat"></span><span class="label latch">Latch</span>
+    </button>
+    <span class="led" id="led"></span>
+  </div>
+
+  <div class="knobs">
+    <div class="control" data-knob="rate"></div>
+    <div class="control" data-knob="fade"></div>
+    <div class="control" data-knob="bend" data-center></div>
+    <div class="control" data-knob="roll"></div>
+    <div class="control" data-knob="mix"></div>
+  </div>
+
+  <div class="presets" role="group" aria-label="Preset">
+    <button class="step" id="prev" aria-label="Previous preset">◀</button>
+    <output class="window" id="window" aria-live="polite"></output>
+    <button class="step" id="next" aria-label="Next preset">▶</button>
+  </div>
+
+  <div class="bay">
+    <button class="treadle" id="treadle" aria-label="Repeat" aria-pressed="false">
+      <svg class="art" viewBox="-60 0 500 300" aria-hidden="true">
+        <defs>
+          <filter id="rough" filterUnits="userSpaceOnUse" x="-60" y="-10" width="500" height="320">
+            <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="5"/>
+            <feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="grain" filterUnits="userSpaceOnUse" x="-60" y="0" width="500" height="300">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="fine"/>
+            <feComponentTransfer in="fine" result="speck"><feFuncA type="discrete" tableValues="1 1 1 1 1 0.4 0 0"/></feComponentTransfer>
+            <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="2" result="coarse"/>
+            <feComponentTransfer in="coarse" result="blotch"><feFuncA type="discrete" tableValues="1 1 1 1 1 1 0.3 0"/></feComponentTransfer>
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.45" numOctaves="2" seed="9" result="streak"/>
+            <feComponentTransfer in="streak" result="scratch"><feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 0"/></feComponentTransfer>
+            <feComposite in="speck" in2="blotch" operator="in" result="worn"/>
+            <feComposite in="worn" in2="scratch" operator="in" result="worn-all"/>
+            <feFlood flood-color="white"/>
+            <feComposite in2="worn-all" operator="in"/>
+          </filter>
+          <filter id="grain-2" filterUnits="userSpaceOnUse" x="-60" y="0" width="500" height="300">
+            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="11" result="fine"/>
+            <feComponentTransfer in="fine" result="speck"><feFuncA type="discrete" tableValues="1 1 1 1 0.5 0 0 0"/></feComponentTransfer>
+            <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="3" result="coarse"/>
+            <feComponentTransfer in="coarse" result="blotch"><feFuncA type="discrete" tableValues="1 1 1 1 1 0.3 0 0"/></feComponentTransfer>
+            <feComposite in="speck" in2="blotch" operator="in" result="worn"/>
+            <feFlood flood-color="white"/>
+            <feComposite in2="worn" operator="in"/>
+          </filter>
+          <filter id="grain-3" filterUnits="userSpaceOnUse" x="-60" y="0" width="500" height="300">
+            <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="19" result="fine"/>
+            <feComponentTransfer in="fine" result="speck"><feFuncA type="discrete" tableValues="1 1 1 1 0.4 0 0 0"/></feComponentTransfer>
+            <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" seed="4" result="coarse"/>
+            <feComponentTransfer in="coarse" result="blotch"><feFuncA type="discrete" tableValues="1 1 1 1 0.3 0 0 0"/></feComponentTransfer>
+            <feComposite in="speck" in2="blotch" operator="in" result="worn"/>
+            <feFlood flood-color="white"/>
+            <feComposite in2="worn" operator="in"/>
+          </filter>
+          <mask id="worn" maskUnits="userSpaceOnUse" x="-60" y="0" width="500" height="300">
+            <rect x="-60" width="500" height="300" fill="white" filter="url(#grain)"/>
+          </mask>
+          <mask id="worn-2" maskUnits="userSpaceOnUse" x="-60" y="0" width="500" height="300">
+            <rect x="-60" width="500" height="300" fill="white" filter="url(#grain-2)"/>
+          </mask>
+          <mask id="worn-3" maskUnits="userSpaceOnUse" x="-60" y="0" width="500" height="300">
+            <rect x="-60" width="500" height="300" fill="white" filter="url(#grain-3)"/>
+          </mask>
+        </defs>
+
+        <g filter="url(#rough)">
+          <g mask="url(#worn)">
+            <g transform="rotate(-9 140 160) translate(6 6)">
+              <path class="fill" transform="translate(-4 3)" d="M140 30C194 29 226 66 225 116C224 146 213 162 200 173C192 180 188 188 183 196L98 196C91 189 82 180 74 172C58 157 52 138 53 116C55 66 88 31 140 30Z"/>
+              <path class="ink" fill-rule="evenodd" d="M140 22C200 20 238 62 236 116C235 150 222 168 208 180C200 187 196 196 190 204L92 204C84 196 74 186 66 178C48 162 42 140 44 116C46 62 82 24 140 22ZM140 30C88 31 55 66 53 116C52 138 58 157 74 172C82 180 91 189 98 196L183 196C188 188 192 180 200 173C213 162 224 146 225 116C226 66 194 29 140 30Z"/>
+              <path class="ink" d="M170 34C168 44 176 48 172 58C170 64 174 68 172 74C171 77 167 76 168 72C169 66 165 62 167 56C170 46 162 42 165 34C166 30 171 30 170 34Z"/>
+              <path class="ink" d="M78 70C84 78 80 86 86 92C88 95 84 97 82 94C76 88 80 80 74 72C72 68 76 66 78 70Z"/>
+              <path class="ink" d="M88 128C88 98 128 98 128 128C128 135 119 135 119 128C118 111 98 111 97 128C97 135 88 135 88 128Z"/>
+              <path class="ink" d="M156 126C156 94 201 94 201 126C201 134 190 134 190 126C189 106 168 106 167 126C167 134 156 134 156 126Z"/>
+              <path class="ink" d="M142 139C130 139 126 157 135 163C139 166 141 163 142 160C143 163 146 166 150 163C158 157 154 139 142 139Z"/>
+              <path class="ink" d="M198 154C208 148 215 138 217 126C218 121 223 121 223 127C221 144 211 157 200 162C195 165 193 157 198 154Z"/>
+              <path class="ink" d="M74 150C70 144 67 137 66 130C66 126 70 125 71 129C72 136 75 142 79 147C81 150 76 153 74 150Z"/>
+              <path class="ink" d="M92 246C90 272 110 293 142 294C177 294 197 272 195 246Z"/>
+              <path class="fill" transform="translate(-4 3)" d="M101 256C102 274 118 285 142 285C168 285 184 272 186 256Z"/>
+              <path class="ink" d="M90 198C88 192 94 189 100 189L184 189C192 189 197 193 195 200L193 250C192 257 186 259 180 259L104 259C97 259 92 256 92 249Z"/>
+              <g class="fill" transform="translate(-3 2)">
+                <rect x="97" y="194" width="15" height="17" rx="5"/>
+                <rect x="115" y="194" width="16" height="19" rx="5"/>
+                <rect x="134" y="194" width="16" height="18" rx="5"/>
+                <rect x="153" y="194" width="15" height="19" rx="5"/>
+                <rect x="171" y="194" width="16" height="16" rx="5"/>
+                <rect x="101" y="239" width="14" height="14" rx="4"/>
+                <rect x="118" y="237" width="15" height="16" rx="4"/>
+                <rect x="136" y="238" width="15" height="15" rx="4"/>
+                <rect x="154" y="237" width="14" height="16" rx="4"/>
+                <rect x="171" y="240" width="14" height="13" rx="4"/>
+              </g>
+              <path class="ink" d="M188 252C190 264 188 276 189 288C190 296 182 297 181 289C180 276 183 264 182 254Z"/>
+              <circle class="ink" cx="185" cy="292" r="6"/>
+            </g>
+            <path class="ink" d="M30 92C21 106 21 128 30 142C32 146 26 148 24 144C13 127 13 105 24 88C26 84 33 87 30 92Z"/>
+            <path class="ink" d="M14 104C9 113 9 124 14 133C15 136 11 137 10 134C4 124 4 112 10 102C11 99 16 101 14 104Z"/>
+            <path class="ink" d="M226 40C236 48 242 58 244 70C245 74 239 75 238 71C236 61 231 53 222 46C219 43 223 37 226 40Z"/>
+            <path class="ink" d="M240 26C252 34 259 46 262 60C263 64 258 65 257 61C254 49 248 39 237 31C234 28 237 23 240 26Z"/>
+
+            <g class="ink">
+              <path d="M392 44C404 40 410 52 420 50C432 48 436 62 428 70C422 76 434 86 424 92C414 98 408 90 398 96C386 102 376 92 380 82C382 74 370 70 376 60C382 50 384 46 392 44Z"/>
+              <path d="M404 94C406 108 403 124 405 136C406 143 399 145 398 138C396 124 398 108 396 96Z"/>
+              <circle cx="402" cy="140" r="5"/>
+              <circle cx="438" cy="40" r="4"/>
+              <circle cx="418" cy="30" r="3"/>
+              <circle cx="370" cy="46" r="3"/>
+              <circle cx="440" cy="86" r="2.5"/>
+              <circle cx="364" cy="98" r="2"/>
+              <circle cx="430" cy="112" r="3"/>
+              <circle cx="388" cy="116" r="2"/>
+
+              <path d="M-24 168C-12 164 -6 176 2 178C10 182 6 194 -2 198C-8 204 -18 208 -26 202C-36 196 -40 186 -34 178C-31 172 -30 170 -24 168Z"/>
+              <path d="M-18 204C-17 218 -20 232 -18 244C-17 251 -24 252 -25 245C-26 232 -23 218 -24 204Z"/>
+              <circle cx="-21" cy="248" r="4.5"/>
+              <circle cx="10" cy="162" r="3"/>
+              <circle cx="-46" cy="170" r="2.5"/>
+              <circle cx="12" cy="208" r="2"/>
+              <circle cx="-42" cy="212" r="3"/>
+              <circle cx="16" cy="186" r="1.6"/>
+
+              <path d="M418 238C426 236 430 244 434 248C438 254 432 260 424 260C416 262 410 256 412 248C413 242 412 240 418 238Z"/>
+              <circle cx="440" cy="234" r="2"/>
+              <circle cx="402" cy="264" r="2.5"/>
+              <circle cx="436" cy="268" r="1.5"/>
+
+              <circle cx="60" cy="18" r="1.8"/>
+              <circle cx="82" cy="34" r="1.2"/>
+              <circle cx="252" cy="12" r="2"/>
+              <circle cx="302" cy="30" r="1.5"/>
+              <circle cx="-40" cy="120" r="1.6"/>
+              <circle cx="-30" cy="40" r="2"/>
+              <circle cx="18" cy="280" r="2.2"/>
+              <circle cx="232" cy="290" r="1.5"/>
+              <circle cx="356" cy="168" r="1.8"/>
+              <circle cx="350" cy="12" r="1.2"/>
+              <circle cx="-50" cy="276" r="1.8"/>
+              <circle cx="112" cy="8" r="1.5"/>
+            </g>
+          </g>
+
+          <g class="laugh ink">
+            <g transform="rotate(-8 240 188)" mask="url(#worn)">
+              <text x="240" y="188" font-size="54">HA</text>
+              <rect x="246" y="180" width="7" height="22" rx="3.5"/>
+              <circle cx="249.5" cy="204" r="5"/>
+              <rect x="301" y="180" width="6" height="32" rx="3"/>
+              <circle cx="304" cy="214" r="4.5"/>
+              <rect x="325" y="180" width="5" height="13" rx="2.5"/>
+              <circle cx="327.5" cy="195" r="3.5"/>
+            </g>
+            <g transform="rotate(7 268 236)" mask="url(#worn-2)">
+              <text x="268" y="236" font-size="40">HA</text>
+              <rect x="300" y="230" width="5" height="16" rx="2.5"/>
+              <circle cx="302.5" cy="248" r="3.5"/>
+            </g>
+            <text x="318" y="284" font-size="28" transform="rotate(-12 318 284)" mask="url(#worn-3)">HA</text>
+          </g>
+        </g>
+      </svg>
+      <span class="pad"></span>
+      <span class="hinge"></span>
+    </button>
+  </div>
+
+  <span class="version print" id="version"></span>
+</main>
 
 <script>
 (() => {
   const params = new Map();
   const views = new Map();
   const dragging = new Set();
+  let engaged = false;
+  let stomping = false;
+
+  // Plain values, in the units the controls show. Loading one leaves
+  // Trigger and the treadle alone.
+  const PRESETS = [
+    { name: "Stutter", rate: "1/16", fade: 0, bend: 0, roll: 0, mix: 100 },
+    { name: "Roll", rate: "1/8", fade: 0, bend: 0, roll: 60, mix: 100 },
+    { name: "Tape stop", rate: "1/4", fade: 0, bend: -55, roll: 0, mix: 100 },
+    { name: "Riser", rate: "1/4", fade: 0, bend: 45, roll: 40, mix: 100 },
+    { name: "Glitch", rate: "1/16T", fade: 10, bend: 0, roll: 30, mix: 100 },
+    { name: "Wind down", rate: "1/2", fade: 20, bend: -30, roll: 20, mix: 100 },
+    { name: "Dub echo", rate: "1/8T", fade: 25, bend: 0, roll: 0, mix: 50 },
+    { name: "Big loop", rate: "1 bar", fade: 0, bend: 0, roll: 0, mix: 100 },
+  ];
+
+  // Each preset field as the normalized value its parameter takes.
+  const NORMALIZE = {
+    rate: (v) => {
+      const p = params.get("rate");
+      return p ? p.options.indexOf(v) / p.steps : 0;
+    },
+    fade: (v) => v / 100,
+    bend: (v) => (v + 100) / 200,
+    roll: (v) => v / 100,
+    mix: (v) => v / 100,
+  };
 
   const bridge = window.ipc
     ? (msg) => window.ipc.postMessage(JSON.stringify(msg))
@@ -170,6 +647,7 @@
     p.value = Math.min(1, Math.max(0, value));
     bridge({ type: "set", id, value: p.value });
     views.get(id)?.(p);
+    showPreset();
   }
 
   function gesture(id, fn) {
@@ -178,24 +656,45 @@
     bridge({ type: "end", id });
   }
 
-  // ---------- controls ----------
+  // ---------- presets ----------
 
-  function control(p, widget) {
-    const el = document.createElement("div");
-    el.className = "control";
-    const name = document.createElement("span");
-    name.className = "name";
-    name.textContent = p.name;
-    const text = document.createElement("span");
-    text.className = "text";
-    el.append(name, widget, text);
-    return { el, text };
+  function presetIndex() {
+    return PRESETS.findIndex((preset) =>
+      Object.entries(NORMALIZE).every(([id, normalize]) =>
+        Math.abs((params.get(id)?.value ?? -1) - normalize(preset[id])) < 0.002));
   }
 
-  function buildKnob(p) {
+  function showPreset() {
+    const window = document.getElementById("window");
+    const i = presetIndex();
+    window.textContent = i < 0 ? "Custom" : PRESETS[i].name;
+    window.dataset.custom = String(i < 0);
+  }
+
+  function applyPreset(i) {
+    const preset = PRESETS[(i + PRESETS.length) % PRESETS.length];
+    for (const [id, normalize] of Object.entries(NORMALIZE)) gesture(id, () => setParam(id, normalize(preset[id])));
+  }
+
+  function step(dir) {
+    const i = presetIndex();
+    applyPreset(i < 0 ? (dir > 0 ? 0 : -1) : i + dir);
+  }
+
+  document.getElementById("prev").addEventListener("click", () => step(-1));
+  document.getElementById("next").addEventListener("click", () => step(1));
+
+  // ---------- knobs ----------
+
+  // Drag up or down (Shift for fine moves), scroll, arrow keys, and
+  // double-click to reset. Stepped knobs move a step at a time.
+  function buildKnob(host) {
+    const p = params.get(host.dataset.knob);
+    if (!p) return;
     const id = p.id;
-    const dial = document.createElement("div");
-    dial.className = "dial";
+    const stepped = p.steps > 0;
+    const snap = (v) => stepped ? Math.round(v * p.steps) / p.steps : v;
+
     const knob = document.createElement("div");
     knob.className = "knob";
     knob.tabIndex = 0;
@@ -203,33 +702,41 @@
     knob.setAttribute("aria-label", p.name);
     knob.setAttribute("aria-valuemin", "0");
     knob.setAttribute("aria-valuemax", "1");
-    const pointer = document.createElement("div");
-    pointer.className = "pointer";
-    dial.append(knob, pointer);
-    const { el, text } = control(p, dial);
-
-    views.set(id, (p) => {
-      dial.style.setProperty("--turn", p.value.toFixed(4));
-      knob.setAttribute("aria-valuenow", p.value.toFixed(4));
-      knob.setAttribute("aria-valuetext", p.text);
-      text.textContent = p.text;
-    });
-
-    const stepped = p.steps > 0;
-    const snap = (v) => stepped ? Math.round(v * p.steps) / p.steps : v;
-    const stepSize = stepped ? 1 / p.steps : 0.01;
+    const ticks = document.createElement("div");
+    ticks.className = "ticks";
+    const count = stepped ? p.steps : 10;
+    for (let i = 0; i <= count; i++) {
+      const tick = document.createElement("i");
+      const major = "center" in host.dataset ? i === count / 2 : i === 0 || i === count;
+      if (major) tick.className = "major";
+      tick.style.rotate = `${(i / count) * 270 - 135}deg`;
+      ticks.append(tick);
+    }
+    knob.append(ticks);
+    for (const part of ["skirt", "cap", "pointer"]) {
+      const el = document.createElement("div");
+      el.className = part;
+      knob.append(el);
+    }
+    const label = document.createElement("span");
+    label.className = "label print";
+    label.textContent = p.name;
+    label.setAttribute("aria-hidden", "true");
+    const value = document.createElement("span");
+    value.className = "value";
+    host.replaceChildren(knob, label, value);
 
     knob.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       knob.setPointerCapture(e.pointerId);
       knob.focus();
       dragging.add(id);
+      host.classList.add("active");
       bridge({ type: "begin", id });
       let raw = p.value;
       let lastY = e.clientY;
       const move = (ev) => {
-        const fine = ev.shiftKey ? 0.15 : 1;
-        raw = Math.min(1, Math.max(0, raw + ((lastY - ev.clientY) / 200) * fine));
+        raw = Math.min(1, Math.max(0, raw + ((lastY - ev.clientY) / 200) * (ev.shiftKey ? 0.15 : 1)));
         lastY = ev.clientY;
         const next = snap(raw);
         if (next !== p.value) setParam(id, next);
@@ -239,6 +746,7 @@
         knob.removeEventListener("pointerup", up);
         knob.removeEventListener("pointercancel", up);
         dragging.delete(id);
+        host.classList.remove("active");
         bridge({ type: "end", id });
       };
       knob.addEventListener("pointermove", move);
@@ -253,7 +761,7 @@
       if (dir === undefined) return;
       e.preventDefault();
       e.stopPropagation();
-      const amount = stepped ? stepSize : stepSize * (e.shiftKey ? 10 : 1);
+      const amount = stepped ? 1 / p.steps : e.shiftKey ? 0.1 : 0.01;
       gesture(id, () => setParam(id, snap(p.value + dir * amount)));
     });
 
@@ -261,34 +769,80 @@
       e.preventDefault();
       const dir = Math.sign(-e.deltaY);
       if (!dir) return;
-      gesture(id, () => setParam(id, snap(p.value + dir * (stepped ? stepSize : stepSize / 2))));
+      gesture(id, () => setParam(id, snap(p.value + dir * (stepped ? 1 / p.steps : 0.005))));
     }, { passive: false });
 
-    return el;
-  }
-
-  function buildSwitch(p) {
-    const id = p.id;
-    const button = document.createElement("button");
-    button.className = "switch";
-    button.setAttribute("role", "switch");
-    button.setAttribute("aria-label", p.name);
-    const { el, text } = control(p, button);
     views.set(id, (p) => {
-      button.setAttribute("aria-checked", String(p.value >= 0.5));
-      text.textContent = p.text;
+      knob.style.setProperty("--turn", p.value.toFixed(4));
+      knob.setAttribute("aria-valuenow", p.value.toFixed(4));
+      knob.setAttribute("aria-valuetext", p.text);
+      value.textContent = p.text;
     });
-    button.addEventListener("click", () => gesture(id, () => setParam(id, p.value >= 0.5 ? 0 : 1)));
-    return el;
   }
 
-  // Two-step parameters (bools and two-option enums) become switches,
-  // everything else a knob. Replace this with a hand-laid page once the
-  // plugin's controls settle.
+  // ---------- trigger, treadle and LED ----------
+
+  function showEngaged() {
+    const down = engaged || stomping;
+    document.getElementById("treadle").setAttribute("aria-pressed", String(down));
+    document.getElementById("led").classList.toggle("on", engaged);
+  }
+
+  function buildTrigger() {
+    const p = params.get("trigger");
+    if (!p) return;
+    const toggle = document.getElementById("trigger");
+    views.set(p.id, (p) => toggle.setAttribute("aria-checked", String(p.value >= 0.5)));
+    toggle.addEventListener("click", () => gesture(p.id, () => setParam(p.id, p.value >= 0.5 ? 0 : 1)));
+  }
+
+  // The treadle is a momentary switch: pressing sets Repeat and letting go
+  // clears it. The plugin works out Hold and Latch from that, and the
+  // `engaged` light says whether it's repeating.
+  function buildTreadle() {
+    const p = params.get("repeat");
+    if (!p) return;
+    const treadle = document.getElementById("treadle");
+    const press = () => {
+      if (stomping) return;
+      stomping = true;
+      bridge({ type: "begin", id: p.id });
+      setParam(p.id, 1);
+      showEngaged();
+    };
+    const release = () => {
+      if (!stomping) return;
+      stomping = false;
+      setParam(p.id, 0);
+      bridge({ type: "end", id: p.id });
+      showEngaged();
+    };
+    treadle.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      treadle.setPointerCapture(e.pointerId);
+      press();
+    });
+    treadle.addEventListener("pointerup", release);
+    treadle.addEventListener("pointercancel", release);
+    treadle.addEventListener("keydown", (e) => {
+      if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+        e.preventDefault();
+        press();
+      }
+    });
+    treadle.addEventListener("keyup", (e) => {
+      if (e.key === " " || e.key === "Enter") release();
+    });
+    treadle.addEventListener("blur", release);
+  }
+
   function build() {
-    const root = document.getElementById("controls");
-    root.replaceChildren(...[...params.values()].map((p) => p.steps === 1 ? buildSwitch(p) : buildKnob(p)));
+    document.querySelectorAll("[data-knob]").forEach(buildKnob);
+    buildTrigger();
+    buildTreadle();
     for (const p of params.values()) views.get(p.id)?.(p);
+    showPreset();
+    showEngaged();
   }
 
   // ---------- messages ----------
@@ -322,41 +876,57 @@
           if (!dragging.has(id)) p.value = value;
           views.get(id)?.(p);
         }
+        showPreset();
+        return;
+      case "lights":
+        if ("engaged" in msg.values) engaged = msg.values.engaged;
+        showEngaged();
         return;
     }
   };
 
   // ---------- browser mock ----------
 
-  // Mirrors the plugin's parameters so the page can be worked on in a
-  // browser. Keep it in step with params when they change.
+  // Mirrors the plugin's parameters, and its Hold and Latch logic for the
+  // `engaged` light, so the page can be worked on in a browser. Keep it in
+  // step with params when they change.
   function mockBridge() {
+    const version = new URLSearchParams(location.search).get("version") ?? "0.0.0";
+    const percent = (n) => `${Math.round(n * 100)}%`;
     const choice = (options) => ({ steps: options.length - 1, options, text: (n) => options[Math.round(n * (options.length - 1))] });
     const specs = [
       { id: "rate", name: "Rate", default: 0.5, ...choice(["1 bar", "1/2", "1/2T", "1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32", "1/32T"]) },
-      { id: "fade", name: "Fade", steps: 0, default: 0, text: (n) => `${Math.round(n * 100)}%` },
+      { id: "fade", name: "Fade", steps: 0, default: 0, text: percent },
       { id: "bend", name: "Bend", steps: 0, default: 0.5, text: (n) => `${Math.round(n * 200 - 100)}%` },
-      { id: "roll", name: "Roll", steps: 0, default: 0, text: (n) => `${Math.round(n * 100)}%` },
-      { id: "mix", name: "Mix", steps: 0, default: 1, text: (n) => `${Math.round(n * 100)}%` },
+      { id: "roll", name: "Roll", steps: 0, default: 0, text: percent },
+      { id: "mix", name: "Mix", steps: 0, default: 1, text: percent },
       { id: "trigger", name: "Trigger", default: 0, ...choice(["Hold", "Latch"]) },
       { id: "repeat", name: "Repeat", default: 0, ...choice(["Off", "On"]) },
     ];
-    const version = new URLSearchParams(location.search).get("version") ?? "0.0.0";
     const values = Object.fromEntries(specs.map((s) => [s.id, s.default]));
+    let latched = false;
     const send = (msg) => setTimeout(() => window.onPluginMessage(msg));
     const sendValues = (ids) => send({
       type: "values",
       values: ids.map((id) => ({ id, value: values[id], text: specs.find((s) => s.id === id).text(values[id]) })),
     });
+    const sendEngaged = () => {
+      const latch = values.trigger >= 0.5;
+      if (!latch) latched = false;
+      send({ type: "lights", values: { engaged: latch ? latched : values.repeat >= 0.5 } });
+    };
     return (msg) => {
       switch (msg.type) {
         case "ready":
           send({ type: "init", version, params: specs.map(({ text, ...rest }) => ({ options: [], ...rest })) });
           sendValues(specs.map((s) => s.id));
+          sendEngaged();
           return;
         case "set":
+          if (msg.id === "repeat" && msg.value >= 0.5 && values.repeat < 0.5 && values.trigger >= 0.5) latched = !latched;
           values[msg.id] = msg.value;
           sendValues([msg.id]);
+          sendEngaged();
           return;
       }
     };

@@ -11,7 +11,14 @@ pedal" (`keepup idea show 65`).
   drive it directly. `Settings` holds the controls in their own units,
   `Transport` the host's tempo and position at the start of a block.
 - `plugin/src/params.rs`: host parameters, mapped to `Settings`.
-- `plugin/src/lib.rs`: plumbing, including the host's transport.
+- `plugin/src/lib.rs`: plumbing, including the host's transport and the
+  `engaged` light.
+- `plugin/src/editor.rs` and `plugin/src/bridge.rs`: nothing specific to
+  Ha Ha Ha. The page's size and HTML come from `PAGE` in `lib.rs`, and the
+  bridge works with any `#[derive(Params)]` struct. `editor::Lights`
+  sends named on/off states that aren't parameters to the page.
+- `ui/index.html`: the whole editor, compiled into the plugin, with a mock
+  bridge for running it in a browser.
 
 ## Engine
 
@@ -47,12 +54,11 @@ pedal" (`keepup idea show 65`).
 2. `HaHaHaParams` in `params.rs`, and `settings()`. Parameter IDs must
    never change after a release.
 3. The mock's `specs` in `ui/index.html`.
-4. The controls table in `README.md`.
-- `plugin/src/editor.rs` and `plugin/src/bridge.rs`: nothing specific to
-  Ha Ha Ha. The page's size and HTML come from `PAGE` in `lib.rs`, and the
-  bridge works with any `#[derive(Params)]` struct.
-- `ui/index.html`: the whole editor, compiled into the plugin, with a mock
-  bridge for running it in a browser.
+4. A control for it in the page's markup (`data-knob` for a knob).
+5. `PRESETS` and `NORMALIZE` in `ui/index.html`, if presets should set
+   it.
+6. The controls table in `README.md`, and the presets table if it's in
+   them.
 
 ## Sound changes and golden renders
 
@@ -98,11 +104,41 @@ Settled with the user; keep to it.
   shape whose thickness swells and thins like brush ink, with rounded
   corners and ends, and a worn screen-print texture knocked out of the
   ink so the pink shows through.
+- Grit, asked for after the first pass ("more grit/distress/splatter"):
+  `#rough` displaces every edge so the ink bleeds, `#grain` knocks out
+  fine speckle, big worn blotches and horizontal scratches, the cream
+  layer sits a few units off register, and there are ink splatters
+  with drips, drool from the jaw and drips off the first two HAs. Keep
+  it at least this rough.
+- Knobs: 60 px cream caps on light chrome knurled skirts, spaced across
+  a 540 px face. The first pass had 50 px knobs with dark knurls, which
+  looked cramped and heavy.
+- Type: the HAs are Shrikhand (subset to "HA"); every label is Fredoka
+  SemiBold (subset to letters, digits, "." and "/"). Picked from
+  Chewy, Rubik Wet Paint, Lacquer and Shrikhand rendered on the treadle:
+  Shrikhand is the only one that's heavy and rounded with no sharp
+  corners and still reads at 28 px.
+- Presets: a cream window between chrome ◀ ▶ buttons under the knobs,
+  in maroon ink. Red is only for the LED.
 
 ## Editor
 
-- The window size is set in `PAGE.size` in `lib.rs` and by the page's
-  outer element in `ui/index.html`. Change them together.
+- The window size is set in two places that must change together:
+  `PAGE.size` in `lib.rs`, and `.pedal`'s `inline-size` and `block-size`
+  in `ui/index.html` (the window leaves 24 px around the pedal).
+- The treadle is momentary on the page: pressing sets `repeat` and
+  letting go clears it, inside one begin/end gesture. Hold and Latch are
+  worked out in the engine, so a MIDI footswitch behaves the same. The
+  LED and the treadle's sunk state follow the `engaged` light, not the
+  parameter; the mock copies the engine's Latch logic to fake it.
+- Presets live in `PRESETS` in `ui/index.html`, in plain units, and
+  `NORMALIZE` maps each field to its parameter's normalized value. The
+  window works out which preset is showing from the current values, so
+  nothing extra is saved with a project.
+- Check layout in WebKit, not just Chromium: `scripts/screenshot.sh`
+  renders in WebKit, the engine the macOS plugin window uses. An SVG in
+  a grid row inside a `<button>` overflowed there, which is why the
+  treadle's art and pad are absolutely positioned.
 - The local preview server gets cached by the browser. Add `?v=N` after
   each edit. Keep the mock's `specs` in step with the plugin's
   parameters.

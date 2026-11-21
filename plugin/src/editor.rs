@@ -33,18 +33,25 @@ pub struct Page {
 
 const FRAME: Duration = Duration::from_micros(16_667);
 
+/// Named on/off states the plugin shares with the page, such as an LED
+/// that follows the engine rather than a parameter. The page gets
+/// `{ type: "lights", values: { name: bool } }` whenever one changes.
+pub type Lights = Vec<(&'static str, Arc<AtomicBool>)>;
+
 pub struct WebEditor {
     page: &'static Page,
     params: Arc<dyn Params>,
+    lights: Lights,
     changed: Arc<AtomicBool>,
     scale_factor: Arc<AtomicU64>,
 }
 
 impl WebEditor {
-    pub fn new(page: &'static Page, params: Arc<dyn Params>) -> Self {
+    pub fn new(page: &'static Page, params: Arc<dyn Params>, lights: Lights) -> Self {
         Self {
             page,
             params,
+            lights,
             changed: Arc::new(AtomicBool::new(true)),
             scale_factor: Arc::new(AtomicU64::new(1f64.to_bits())),
         }
@@ -89,6 +96,7 @@ impl Editor for WebEditor {
         });
         let page = self.page;
         let params = self.params.clone();
+        let lights = self.lights.clone();
         let changed = self.changed.clone();
         changed.store(true, Ordering::Release);
         let settings = WindowSettings::new()
@@ -113,6 +121,8 @@ impl Editor for WebEditor {
                         tx: Some(tx),
                         inbox,
                         bridge: Bridge::new(params, page.version),
+                        lit: vec![None; lights.len()],
+                        lights,
                         ready: false,
                         page_has_focus: false,
                     }),
@@ -199,6 +209,9 @@ struct State {
     tx: Option<Sender<String>>,
     inbox: Receiver<String>,
     bridge: Bridge,
+    lights: Lights,
+    /// What the page was last told for each light.
+    lit: Vec<Option<bool>>,
     ready: bool,
     /// Something on the page has keyboard focus.
     page_has_focus: bool,
@@ -250,7 +263,10 @@ impl State {
             }
             Some("keys") => self.page_has_focus = msg["active"].as_bool().unwrap_or(false),
             Some(kind) => {
-                self.ready |= kind == "ready";
+                if kind == "ready" {
+                    self.ready = true;
+                    self.lit.fill(None);
+                }
                 let mut out = Vec::new();
                 self.bridge.handle(&msg, &self.context, &mut out);
                 self.send(out);
@@ -268,7 +284,22 @@ impl State {
             let changed = self.changed.swap(false, Ordering::AcqRel);
             let mut out = Vec::new();
             self.bridge.poll(changed, &mut out);
+            self.poll_lights(&mut out);
             self.send(out);
+        }
+    }
+
+    fn poll_lights(&mut self, out: &mut Vec<Value>) {
+        let mut values = serde_json::Map::new();
+        for ((name, flag), last) in self.lights.iter().zip(self.lit.iter_mut()) {
+            let on = flag.load(Ordering::Relaxed);
+            if *last != Some(on) {
+                *last = Some(on);
+                values.insert(name.to_string(), on.into());
+            }
+        }
+        if !values.is_empty() {
+            out.push(json!({ "type": "lights", "values": values }));
         }
     }
 }

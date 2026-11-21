@@ -6,11 +6,12 @@ mod params;
 use engine::Engine;
 use nice_plug::prelude::*;
 use params::HaHaHaParams;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 static PAGE: editor::Page = editor::Page {
     title: "Ha Ha Ha",
-    size: (360, 220),
+    size: (588, 748),
     html: include_str!("../../ui/index.html"),
     version: env!("CARGO_PKG_VERSION"),
     background: (27, 26, 25, 255),
@@ -20,11 +21,16 @@ static PAGE: editor::Page = editor::Page {
 pub struct HaHaHa {
     params: Arc<HaHaHaParams>,
     engine: Engine,
+    engaged: Arc<AtomicBool>,
 }
 
 impl Default for HaHaHa {
     fn default() -> Self {
-        Self { params: Arc::new(HaHaHaParams::default()), engine: Engine::new(48_000.0) }
+        Self {
+            params: Arc::new(HaHaHaParams::default()),
+            engine: Engine::new(48_000.0),
+            engaged: Arc::new(AtomicBool::new(false)),
+        }
     }
 }
 
@@ -64,7 +70,7 @@ impl Plugin for HaHaHa {
     }
 
     fn editor(&mut self, _executor: AsyncExecutor<Self>) -> Option<Self::Editor> {
-        Some(editor::WebEditor::new(&PAGE, self.params.clone()))
+        Some(editor::WebEditor::new(&PAGE, self.params.clone(), vec![("engaged", self.engaged.clone())]))
     }
 
     fn activate(
@@ -97,6 +103,7 @@ impl Plugin for HaHaHa {
         if let [left, right] = buffer.as_slice() {
             self.engine.process(left, right, &transport);
         }
+        self.engaged.store(self.engine.engaged(), Ordering::Relaxed);
         ProcessStatus::Normal
     }
 }

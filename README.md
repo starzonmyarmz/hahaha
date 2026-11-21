@@ -1,5 +1,7 @@
 # Ha Ha Ha
 
+<img src="docs/hahaha.jpg" width="334" alt="Ha Ha Ha, a bubblegum-pink pedal printed in maroon, with a Hold/Latch toggle and a red LED over five cream knobs with chrome skirts (Rate, Fade, Bend, Roll, Mix), a cream preset window between chrome arrow buttons, and a wide hinged treadle printed with a laughing skull spilling HA HA HA above a ribbed rubber pad">
+
 A tempo-synced repeater pedal, as a VST3 and CLAP plugin for macOS and
 Windows. Hold the treadle and it grabs the last beat division you played
 and stutters it on the grid, locked to your host's tempo. Let go and
@@ -42,6 +44,29 @@ treadle again while it's repeating grabs a fresh slice and starts them
 over. Bend gives up the grid: a tape stop drags behind the beat and a
 riser runs ahead of it.
 For automation, use Hold: in Latch, each press toggles.
+
+Click and hold the treadle to repeat (Space or Enter works too when
+it's focused). It sinks and the LED lights while it's repeating, in
+Latch as well. Drag a knob up or down (hold Shift for fine moves),
+scroll, or use the arrow keys. Double-click to reset.
+
+## Presets
+
+The ◀ ▶ buttons step through eight presets. Loading one sets the knobs
+and leaves Trigger alone, and the host records it like any other
+control change. The window shows the preset's name while the knobs
+match it, and Custom once you change something.
+
+| Preset | Rate | Fade | Bend | Roll | Mix |
+|---|---|---|---|---|---|
+| Stutter | 1/16 | 0 | 0 | 0 | 100 |
+| Roll | 1/8 | 0 | 0 | 60 | 100 |
+| Tape stop | 1/4 | 0 | −55 | 0 | 100 |
+| Riser | 1/4 | 0 | 45 | 40 | 100 |
+| Glitch | 1/16T | 10 | 0 | 30 | 100 |
+| Wind down | 1/2 | 20 | −30 | 20 | 100 |
+| Dub echo | 1/8T | 25 | 0 | 0 | 50 |
+| Big loop | 1 bar | 0 | 0 | 0 | 100 |
 
 ## Installing
 
@@ -96,5 +121,9 @@ before starting the host.
 - [nice-plug](https://codeberg.org/RustAudio/nice-plug), pinned to
   [a fork](https://github.com/starzonmyarmz/nice-plug/tree/patina) that
   adds `ActivateContext::gui_context()`.
+- [Shrikhand](https://fonts.google.com/specimen/Shrikhand) by Jonny
+  Pinhorn and [Fredoka](https://fonts.google.com/specimen/Fredoka) by
+  the Fredoka Project Authors, under the SIL Open Font License
+  (`ui/fonts`).
 - Started from
   [plugin-template](https://github.com/starzonmyarmz/plugin-template).

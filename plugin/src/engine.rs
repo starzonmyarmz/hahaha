@@ -239,6 +239,11 @@ impl Engine {
         }
     }
 
+    /// The treadle is down, or latched: what the LED shows.
+    pub fn engaged(&self) -> bool {
+        self.want()
+    }
+
     fn want(&self) -> bool {
         match self.settings.mode {
             Mode::Hold => self.treadle,
