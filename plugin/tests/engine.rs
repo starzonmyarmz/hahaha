@@ -286,7 +286,10 @@ fn silence_stays_silent_and_extremes_stay_finite() {
         for (fade, bend, roll) in [(0.0, 0.0, 0.0), (100.0, -100.0, 100.0), (0.0, 100.0, 100.0)] {
             let s = effects(rate, fade, bend, roll);
             let out = render(&input, |at| (s, at >= BLOCK, playing(at, tempo)));
-            assert!(out.iter().all(|x| x.is_finite() && x.abs() <= 2.0), "{rate:?} at {tempo} BPM, {fade}/{bend}/{roll}");
+            assert!(
+                out.iter().all(|x| x.is_finite() && x.abs() <= 2.0),
+                "{rate:?} at {tempo} BPM, {fade}/{bend}/{roll}"
+            );
         }
     }
 }
@@ -302,7 +305,8 @@ fn riff() -> Vec<f32> {
             let freq = notes[step % notes.len()] * if step % 16 >= 8 { 1.5 } else { 1.0 };
             let pluck = (2.0 * std::f64::consts::PI * freq * since).sin() * (-since * 18.0).exp();
             let beat = (t % BEAT) as f64 / SR as f64;
-            let kick = (2.0 * std::f64::consts::PI * (50.0 * beat + 60.0 * (1.0 - (-beat * 30.0).exp()) / 30.0)).sin() * (-beat * 12.0).exp();
+            let kick = (2.0 * std::f64::consts::PI * (50.0 * beat + 60.0 * (1.0 - (-beat * 30.0).exp()) / 30.0)).sin()
+                * (-beat * 12.0).exp();
             (0.4 * pluck + 0.5 * kick) as f32
         })
         .collect()
@@ -316,12 +320,24 @@ fn biggest_jump(xs: &[f32]) -> f32 {
 fn wraps_and_rate_changes_dont_click() {
     let input = riff();
     let press = block_at(BEAT / 8);
-    let rates = [Division::Quarter, Division::EighthTriplet, Division::Sixteenth, Division::SixteenthTriplet, Division::ThirtySecond, Division::Half];
+    let rates = [
+        Division::Quarter,
+        Division::EighthTriplet,
+        Division::Sixteenth,
+        Division::SixteenthTriplet,
+        Division::ThirtySecond,
+        Division::Half,
+    ];
     let out = render(&input, |at| {
         let rate = rates[(at / (BEAT * 3 / 4)) % rates.len()];
         (settings(rate, Mode::Hold, 100.0), at >= press, playing(at, 120.0))
     });
-    assert!(biggest_jump(&out) <= biggest_jump(&input) * 1.1, "{} against {}", biggest_jump(&out), biggest_jump(&input));
+    assert!(
+        biggest_jump(&out) <= biggest_jump(&input) * 1.1,
+        "{} against {}",
+        biggest_jump(&out),
+        biggest_jump(&input)
+    );
 }
 
 #[test]
@@ -331,7 +347,12 @@ fn rolls_and_tape_stops_dont_click() {
     for (fade, bend, roll) in [(0.0, 0.0, 100.0), (30.0, 0.0, 60.0), (0.0, -60.0, 0.0), (20.0, -100.0, 50.0)] {
         let s = effects(Division::Quarter, fade, bend, roll);
         let out = render(&input, |at| (s, at >= press, playing(at, 120.0)));
-        assert!(biggest_jump(&out) <= biggest_jump(&input) * 1.1, "{fade}/{bend}/{roll}: {} against {}", biggest_jump(&out), biggest_jump(&input));
+        assert!(
+            biggest_jump(&out) <= biggest_jump(&input) * 1.1,
+            "{fade}/{bend}/{roll}: {} against {}",
+            biggest_jump(&out),
+            biggest_jump(&input)
+        );
     }
 }
 

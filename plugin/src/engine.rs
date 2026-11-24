@@ -267,7 +267,9 @@ impl Engine {
         let want = self.want();
 
         let grid = match (transport.playing, transport.tempo, transport.pos_beats) {
-            (true, Some(_), Some(beats)) if beats.is_finite() => Some((beats, transport.bar_start_beats.unwrap_or(0.0))),
+            (true, Some(_), Some(beats)) if beats.is_finite() => {
+                Some((beats, transport.bar_start_beats.unwrap_or(0.0)))
+            }
             _ => None,
         };
         self.on_grid = grid.is_some();
@@ -380,7 +382,8 @@ impl Engine {
                 self.slice[at] = input;
             }
             let current = (b.passes > 0).then(|| self.read(b.base, b.start as f64 + b.pos));
-            let preroll = b.next.filter(|_| b.in_preroll()).map(|(start, _)| self.read(b.base, (start - b.len) as f64 + b.pos));
+            let preroll =
+                b.next.filter(|_| b.in_preroll()).map(|(start, _)| self.read(b.base, (start - b.len) as f64 + b.pos));
             heard = current.is_some() || preroll.is_some();
             repeat = match (current, preroll) {
                 (Some(c), Some(p)) => {
