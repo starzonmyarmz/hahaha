@@ -1,0 +1,19 @@
+_commit: b602e5b
+_src_path: /Users/marino/Code/project-kit
+app_id: com.iamdanielmarino.hahaha
+author: Daniel Marino
+description: 'Tempo-synced stutter and beat repeat, from rolls to tape stops: a VST3
+    and CLAP plugin'
+design_doc: true
+display_name: Ha Ha Ha
+name: hahaha
+oss_community: false
+owner: starzonmyarmz
+public: true
+ships:
+- github-release
+stack: vst-plugin
+starter: false
+voice_doc: false
+vst3_class_id: HaHaHaDanielMari
+year: 2026

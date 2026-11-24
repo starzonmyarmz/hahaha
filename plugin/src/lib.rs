@@ -13,7 +13,10 @@ static PAGE: editor::Page = editor::Page {
     title: "Ha Ha Ha",
     size: (588, 748),
     html: include_str!("../../ui/index.html"),
-    version: env!("CARGO_PKG_VERSION"),
+    version: match option_env!("PLUGIN_VERSION") {
+        Some(version) => version,
+        None => env!("CARGO_PKG_VERSION"),
+    },
     background: (27, 26, 25, 255),
     dev_url_var: "HAHAHA_UI_URL",
 };

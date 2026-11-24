@@ -1,9 +1,10 @@
 # Ha Ha Ha
 
+Tempo-synced stutter and beat repeat, from rolls to tape stops: a VST3 and CLAP plugin
+
 <img src="docs/hahaha.png" width="337" alt="Ha Ha Ha, a bubblegum-pink pedal printed in maroon, with a Hold/Latch toggle and a red LED over five cream knobs with chrome skirts (Rate, Fade, Bend, Roll, Mix), a cream preset window between chrome arrow buttons, and a wide hinged treadle printed with a laughing skull spilling HA HA HA above a ribbed rubber pad">
 
-A tempo-synced repeater pedal, as a VST3 and CLAP plugin for macOS and
-Windows. Hold the treadle and it grabs the last beat division you played
+A repeater pedal for macOS and Windows. Hold the treadle and it grabs the last beat division you played
 and stutters it on the grid, locked to your host's tempo. Let go and
 you're back to dry.
 
@@ -78,8 +79,8 @@ Download the zip from
 
 ```sh
 cargo xtask bundle hahaha --release        # target/bundled/Ha Ha Ha.{vst3,clap}
-scripts/bump.sh [patch|minor|major]        # bump the version (patch by default)
-scripts/install.sh                         # bundle, sign ad hoc and install on macOS
+scripts/install.sh                         # bundle, sign ad hoc and install on macOS as X.Y.Z-dev+<sha>
+scripts/release --dry-run                  # what the next release would be
 scripts/clap-validator.sh "target/bundled/Ha Ha Ha.clap"
 ```
 
@@ -106,12 +107,17 @@ before starting the host.
 
 ## CI and releases
 
-- `check.yml` runs on pushes to main and on PRs: the tests and
-  clap-validator on macOS, and clap-validator on the Windows build.
-- `release.yml` runs on `vX.Y.Z` tags. The tag must match `version` in
-  the root `Cargo.toml`. It builds a universal macOS bundle and a
-  Windows bundle, validates both, and publishes `hahaha-X.Y.Z.zip`
-  with `INSTALL.txt`.
+- `check.yml` runs on pushes to main and on PRs: rustfmt and clippy, the
+  tests and clap-validator on macOS, and clap-validator on the Windows
+  build. `changelog.yml` checks that a PR with `feat`, `fix` or `perf`
+  commits adds lines to `CHANGELOG.md`.
+- `scripts/release` releases: it works out the version from the commits
+  since the last release (breaking → major, minor before 1.0; `feat` →
+  minor; `fix`, `perf`, `revert` → patch), finalizes `CHANGELOG.md`,
+  commits, tags `vX.Y.Z` and pushes. Add `--dry-run` to only look.
+- `release.yml` runs on that tag. It builds a universal macOS bundle and a
+  Windows bundle, validates both, and publishes `hahaha-X.Y.Z.zip` with
+  `INSTALL.txt` and `SHA256SUMS`, with the changelog section as the notes.
 - `screenshot.yml` runs on pushes to main that touch `ui/`, the version
   or `plugin/src/lib.rs`. It retakes `docs/hahaha.png` with
   `scripts/screenshot.sh`, sets its width in the README, and commits both
