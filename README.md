@@ -118,10 +118,10 @@ before starting the host.
 - `release.yml` runs on that tag. It builds a universal macOS bundle and a
   Windows bundle, validates both, and publishes `hahaha-X.Y.Z.zip` with
   `INSTALL.txt` and `SHA256SUMS`, with the changelog section as the notes.
-- `screenshot.yml` runs on pushes to main that touch `ui/`, the version
-  or `plugin/src/lib.rs`. It retakes `docs/hahaha.png` with
-  `scripts/screenshot.sh`, sets its width in the README, and commits both
-  if the image changed.
+- Nothing on GitHub takes screenshots. `scripts/release` retakes
+  `docs/hahaha.png` through `scripts/pre-release.sh` before the release
+  commit, so the shot shows the new version. Between releases, retake it
+  with `scripts/screenshot.sh` and commit it with the UI change it shows.
 
 ## Built with
 
