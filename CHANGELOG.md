@@ -4,6 +4,8 @@ What changed for people using Ha Ha Ha, newest first. Code-only work stays in th
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-23
+
 ### Added
 - Ha Ha Ha, a tempo-synced stutter and beat repeat, as a VST3 and CLAP plugin for macOS and Windows.
 - A treadle that grabs the last slice on your host's grid and repeats it in time, held down or latched, with Rate from 1 bar to 1/32 (triplets included) and a Mix knob.
