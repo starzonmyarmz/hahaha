@@ -53,7 +53,7 @@ fn transport(t: &nice_plug::context::process::Transport) -> engine::Transport {
 
 impl Plugin for HaHaHa {
     const NAME: &'static str = "Ha Ha Ha";
-    const VENDOR: &'static str = "Dan Marino";
+    const VENDOR: &'static str = "Daniel Marino";
     const URL: &'static str = "";
     const EMAIL: &'static str = "";
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -112,7 +112,7 @@ impl Plugin for HaHaHa {
 }
 
 impl ClapPlugin for HaHaHa {
-    const CLAP_ID: &'static str = "com.danmarino.hahaha";
+    const CLAP_ID: &'static str = "com.iamdanielmarino.hahaha";
     const CLAP_DESCRIPTION: Option<&'static str> = Some("A tempo-synced repeater");
     const CLAP_MANUAL_URL: Option<&'static str> = None;
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
@@ -120,7 +120,7 @@ impl ClapPlugin for HaHaHa {
 }
 
 impl Vst3Plugin for HaHaHa {
-    const VST3_CLASS_ID: [u8; 16] = *b"HaHaHa_DanMarino";
+    const VST3_CLASS_ID: [u8; 16] = *b"HaHaHaDanielMari";
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx, Vst3SubCategory::Delay];
 }
 
